@@ -14,43 +14,43 @@ st.caption("csvをアップロードするだけで、基本的なビジュア�
 
 st.markdown("## csvの読み込み")
 if st.checkbox("csvを追加"):
-    uploaded_file = st.file_uploader("Choose a file")
+    uploaded_file = st.file_uploader("ファイルを選択してください")
     if uploaded_file is not None:
         global df
         # bytes_data = uploaded_file.getvalue()
         # st.write(bytes_data)
         df = pd.read_csv(uploaded_file)
 
-    # EDA開始
-    st.markdown("## EDA")
+    # 可視化開始
+    st.markdown("## データの可視化")
     # headの表示
-    if st.checkbox("head"):
-        st.write(df.head(3))
+    if st.checkbox("最初の5行を表示"):
+        st.write(df.head())
 
     # shapeの表示
-    if st.checkbox("shape"):
+    if st.checkbox("データの行数・列数を表示"):
         st.write(df.shape)
 
     # infoの表示
     # できず
 
     # lineplotの表示
-    if st.checkbox("lineplot"):
+    if st.checkbox("折れ線グラフ"):
         options = st.multiselect("折れ線グラフで表すカラムの追加",df.columns)
         if len(options)>0:
             view = df[options]
             st.line_chart(view)
 
     # pairplotの表示
-    if st.checkbox("pairplot"):
-        options = st.multiselect("相関図で表すカラムの追加",df.columns)
+    if st.checkbox("散布図行列"):
+        options = st.multiselect("散布図行列で表すカラムの追加",df.columns)
         # print(options)
         if len(options)>1:
             fig = sns.pairplot(df,vars = options)
             st.pyplot(fig)
 
     # 相関係数の表示
-    if st.checkbox("corr"):
+    if st.checkbox("相関係数"):
         st.write(df.corr())
 
     st.markdown("## 前処理")
@@ -73,30 +73,32 @@ if st.checkbox("csvを追加"):
     # 寄与度把握
     if st.checkbox("寄与度把握"):
         option = st.radio("寄与対象",df_toInt.columns)
-        y = df_toInt[option]
-        X = df_toInt.drop(option,axis=1)
+        if option is not None:
+            y = df_toInt[option]
+            X = df_toInt.drop(option,axis=1)
 
-        # トレーニングデータ,テストデータの分割
-        X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=0.20, random_state=2)
+            # トレーニングデータ,テストデータの分割
+            X_train, X_test, y_train, y_test = train_test_split(X, y,test_size=0.20, random_state=2)
 
 
-        # 学習に使用するデータを設定
-        lgb_train = lgb.Dataset(X_train, y_train)
-        lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train) 
+            # 学習に使用するデータを設定
+            lgb_train = lgb.Dataset(X_train, y_train)
+            lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train) 
 
-        # LightGBM parameters
-        params = {
-                'task': 'train',
-                'boosting_type': 'gbdt',
-                'objective': 'binary', # 目的 : 二値分類
-                'metric': {'rmse'}, # 評価指標 : rsme(平均二乗誤差の平方根) 
-        }
+            # LightGBM parameters
+            params = {
+                    'task': 'train',
+                    'boosting_type': 'gbdt',
+                    'objective': 'binary', # 目的 : 二値分類
+                    'metric': {'binary_logloss'}, # 評価指標 : logloss
+            }
 
-        # モデルの学習
-        model = lgb.train(params,
-                        train_set=lgb_train, # トレーニングデータの指定
-                        valid_sets=lgb_eval, # 検証データの指定
-                        )
+            # モデルの学習
+            model = lgb.train(params,
+                            train_set=lgb_train, # トレーニングデータの指定
+                            valid_sets=lgb_eval, # 検証データの指定
+                            early_stopping_rounds=10
+                            )
 
-        importance = pd.DataFrame(model.feature_importance(), index=X.columns, columns=['importance'])
-        st.write(importance)
+            importance = pd.DataFrame(model.feature_importance(), index=X.columns, columns=['importance'])
+            st.write(importance)
