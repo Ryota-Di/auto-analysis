@@ -1,4 +1,3 @@
-import streamlit as streamlit
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -10,55 +9,83 @@ from sklearn.model_selection import train_test_split
 
 st.markdown("# 自動分析ツール")
 
-st.caption("csvをアップロードするだけで、基本的なビジュアライズから機械学習を用いた予測までを簡単に行うことができます。")
+st.caption("csvをアップロードするだけで、Excelより手軽に可視化")
+st.caption("表やグラフは随時簡単に保存できます！")
 
-st.markdown("## csvの読み込み")
-if st.checkbox("csvを追加"):
-    uploaded_file = st.file_uploader("ファイルを選択してください")
-    if uploaded_file is not None:
-        global df
-        # bytes_data = uploaded_file.getvalue()
-        # st.write(bytes_data)
-        df = pd.read_csv(uploaded_file)
+st.markdown("### csvの読み込み")
+uploaded_file = st.file_uploader("ファイルを選択してください",type="csv")
+df = pd.DataFrame()
+if uploaded_file is not None:
+    # global df
+    # bytes_data = uploaded_file.getvalue()
+    # st.write(bytes_data)
+    df = pd.read_csv(uploaded_file)
+st.caption("別ファイルがアップロードされると上書きされてしまいますのでご注意ください")
 
-    # 可視化開始
-    st.markdown("## データの可視化")
-    # headの表示
-    if st.checkbox("最初の5行を表示"):
-        st.write(df.head())
+# 可視化開始
+st.markdown("### データの可視化")
 
-    # shapeの表示
-    if st.checkbox("データの行数・列数を表示"):
+# headの表示
+if st.checkbox("最初の5行を表示"):
+    if uploaded_file is None:
+        st.error("データがアップロードされていません")
+    else:
+        st.write(df.head(5))
+
+# shapeの表示
+if st.checkbox("データの行数・列数を表示"):
+    if uploaded_file is None:
+        st.error("データがアップロードされていません")
+    else:
         st.write(df.shape)
 
-    # infoの表示
-    # できず
+if st.checkbox("基本統計量を表示"):
+    if uploaded_file is None:
+        st.error("データがアップロードされていません")
+    else:
+        st.write(df.describe())
 
-    # lineplotの表示
-    if st.checkbox("折れ線グラフ"):
+# infoの表示
+# できず
+
+# lineplotの表示
+if st.checkbox("折れ線グラフ"):
+    if uploaded_file is None:
+        st.error("データがアップロードされていません")
+    else:
         options = st.multiselect("折れ線グラフで表すカラムの追加",df.columns)
         if len(options)>0:
             view = df[options]
             st.line_chart(view)
 
-    # pairplotの表示
-    if st.checkbox("散布図行列"):
+# pairplotの表示
+if st.checkbox("散布図行列"):
+    if uploaded_file is None:
+        st.error("データがアップロードされていません")
+    else:
         options = st.multiselect("散布図行列で表すカラムの追加",df.columns)
         # print(options)
         if len(options)>1:
             fig = sns.pairplot(df,vars = options)
             st.pyplot(fig)
 
-    # 相関係数の表示
-    if st.checkbox("相関係数"):
-        st.write(df.corr())
+# 相関係数の表示
+if st.checkbox("相関係数"):
+    if uploaded_file is None:
+        st.error("データがアップロードされていません")
+    else:
+        # st.write(df.corr())
+        st.write(df.corr().style.background_gradient(cmap='Reds'))
 
-    st.markdown("## 前処理")
+st.markdown("### 前処理")
 
-    # 自動変換後の表示 
-    # 自動変換とは文字列データを削除し、カテゴリーデータを数値データに変換すること
+# 自動変換後の表示 
+# 自動変換とは文字列データを削除し、カテゴリーデータを数値データに変換すること
 
-    if st.checkbox("自動変換後表示"):
+if st.checkbox("自動変換後表示"):
+    if uploaded_file is None:
+        st.error("データがアップロードされていません")
+    else:
         global df_toInt 
         df_toInt = df
         object_columns = df.select_dtypes(include=object).columns
@@ -70,8 +97,11 @@ if st.checkbox("csvを追加"):
         df_toInt = df_toInt.dropna()
         st.write(df_toInt)
 
-    # 寄与度把握
-    if st.checkbox("寄与度把握"):
+# 寄与度把握
+if st.checkbox("寄与度把握"):
+    if uploaded_file is None:
+        st.error("データがアップロードされていません")
+    else:
         option = st.radio("寄与対象",df_toInt.columns)
         if option is not None:
             y = df_toInt[option]
